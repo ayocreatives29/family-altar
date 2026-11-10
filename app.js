@@ -4,7 +4,7 @@
    Everything written here (journal, prayer history) stays on this phone, in localStorage. */
 
 const STORE = 'familyaltar.v1';
-const BUILD = 2; // shown in Settings, so we can tell which version a phone has
+const BUILD = 3; // shown in Settings, so we can tell which version a phone has
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -111,7 +111,7 @@ function download(name, text, type) {
 }
 function prayersAll() {
   const base = (C.prayers || []).map((p) => ({
-    ...p, ref: p.verses.map((x) => x.ref).join(' · '), nkjv: true,
+    ...p, ref: p.ref || p.verses.map((x) => x.ref).join(' · '), nkjv: true,
     ...(S.prayerEdits[p.id] ? { text: S.prayerEdits[p.id].text, edited: true } : {}),
   }));
   const mine = S.userPrayers.map((p) => ({
@@ -357,6 +357,14 @@ function ovalHtml(x, nkjv) {
     ? `<a href="${bgUrl(x.ref)}" target="_blank" rel="noopener">${esc(x.ref)}</a> <span class="ver">· NKJV</span>` : esc(x.ref)}</figcaption>` : '';
   return `<figure class="oval${x.text ? '' : ' bare'}">${x.text ? `<blockquote>${esc(x.text)}</blockquote>` : ''}${cap}</figure>`;
 }
+// A longer verse needs a taller oval, or its first and last lines would touch the curve.
+function fitOvals(root) {
+  $$('.oval', root).forEach((o) => {
+    const h = [...o.children].reduce((s, c) => s + c.getBoundingClientRect().height, 0) + 10;
+    const need = Math.ceil(h * 0.23), cur = parseFloat(getComputedStyle(o).paddingTop) || 0;
+    if (need > cur) { o.style.paddingTop = need + 'px'; o.style.paddingBottom = need + 'px'; }
+  });
+}
 function dockHtml(id) {
   const t = timerFor(id), state = !t ? 'idle' : t.end ? 'running' : 'paused';
   return `<svg class="ring" viewBox="0 0 56 56" aria-hidden="true"><circle class="track" cx="28" cy="28" r="24"/>
@@ -379,6 +387,7 @@ function viewPrayer(v, id) {
         <a class="link" href="#/pray/${encodeURIComponent(id)}/edit">Edit prayer</a></div>
       <div class="dock" id="dock">${dockHtml(id)}</div>
     </div>`;
+  fitOvals(v);
   let lastTap = 0;
   $('#dock').onclick = (e) => {
     const btn = e.target.closest('[data-act]'); if (!btn) return;
