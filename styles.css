@@ -203,6 +203,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 
 .dock { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 14px;
   margin: 10px calc(-1 * var(--gutter)) 0; padding: 12px var(--gutter) calc(var(--safe-b) + 14px);
+  background: var(--bg); /* for browsers without color-mix */
   background: color-mix(in srgb, var(--bg) 86%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
   border-top: 1px solid var(--line); }
 .ring { width: 56px; height: 56px; flex: none; }
@@ -237,7 +238,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 .empty .h3 { color: var(--ink); }
 
 /* ---------- Unlock and who is praying ---------- */
-.gate { min-height: 100dvh; display: flex; flex-direction: column; color: var(--sky-ink, #fff); background: linear-gradient(to bottom, var(--sky-a), var(--sky-b) 55%, var(--sky-c)); position: relative; overflow: hidden; }
+.gate { min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; color: var(--sky-ink, #fff); background: linear-gradient(to bottom, var(--sky-a), var(--sky-b) 55%, var(--sky-c)); position: relative; overflow: hidden; }
 .gate .sky-lamp { top: 26%; left: 50%; }
 .gate .sky-stars { inset: 0 0 45%; }
 .gate-inner { margin-top: auto; padding: 24px var(--gutter) calc(var(--safe-b) + 28px); max-width: 480px; width: 100%; margin-left: auto; margin-right: auto; position: relative; }
@@ -254,6 +255,7 @@ input:focus, textarea:focus, select:focus { outline: none; border-color: var(--a
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: space-around;
   padding: 6px 4px calc(var(--safe-b) + 4px);
+  background: var(--bg); /* for browsers without color-mix */
   background: color-mix(in srgb, var(--bg) 82%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
   border-top: 1px solid var(--line);
 }

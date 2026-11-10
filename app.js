@@ -4,6 +4,7 @@
    Everything written here (journal, prayer history) stays on this phone, in localStorage. */
 
 const STORE = 'familyaltar.v1';
+const BUILD = 2; // shown in Settings, so we can tell which version a phone has
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -28,7 +29,7 @@ const DEFAULTS = {
   who: '', journal: [], log: {}, timer: null, drafts: {}, prayerEdits: {}, userPrayers: [], lockOnOpen: false,
   reminders: { morning: { on: true, time: '06:00' }, evening: { on: true, time: '21:00' } },
 };
-for (const [k, v] of Object.entries(DEFAULTS)) if (S[k] === undefined) S[k] = structuredClone(v);
+for (const [k, v] of Object.entries(DEFAULTS)) if (S[k] === undefined) S[k] = JSON.parse(JSON.stringify(v));
 let saveTimer, wiped = false;
 function save() {
   clearTimeout(saveTimer);
@@ -252,11 +253,16 @@ async function keepAwake(on) {
 }
 function startTimer(id) {
   const t = timerFor(id);
-  if (t?.end) return;
+  if (t && t.end) return;
   S.timer = { id, end: Date.now() + (t ? t.left : PRAY_MS) };
-  // Start the sound system on this tap, so the chime is allowed to play later.
-  try { audioCtx ||= new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch {}
-  keepAwake(true); save();
+  save();
+  // Start the sound system on this tap, so the chime is allowed to play later. Sound and
+  // keeping the screen on are extras: the timer must run even where a phone refuses them.
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const r = audioCtx.resume(); if (r && r.catch) r.catch(() => {});
+  } catch (e) {}
+  keepAwake(true);
 }
 function pauseTimer() {
   const t = S.timer; if (!t?.end) return;
@@ -274,7 +280,8 @@ function tickTimer() {
   paintTimer();
 }
 function completeTimer(id) {
-  (S.log[dkey()] ||= []).push(id);
+  const day = dkey(); if (!S.log[day]) S.log[day] = [];
+  S.log[day].push(id);
   S.timer = null; save(); keepAwake(false);
   if (!document.hidden) chime();
   if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
@@ -372,11 +379,18 @@ function viewPrayer(v, id) {
         <a class="link" href="#/pray/${encodeURIComponent(id)}/edit">Edit prayer</a></div>
       <div class="dock" id="dock">${dockHtml(id)}</div>
     </div>`;
+  let lastTap = 0;
   $('#dock').onclick = (e) => {
-    const act = e.target.closest('[data-act]')?.dataset.act; if (!act) return;
-    if (act === 'start') startTimer(id);
-    if (act === 'pause') pauseTimer();
-    if (act === 'reset') resetTimer();
+    const btn = e.target.closest('[data-act]'); if (!btn) return;
+    // A double tap must not start and then pause straight away: Pause appears where Start was.
+    if (Date.now() - lastTap < 900) return;
+    lastTap = Date.now();
+    const act = btn.dataset.act;
+    try {
+      if (act === 'start') startTimer(id);
+      if (act === 'pause') pauseTimer();
+      if (act === 'reset') resetTimer();
+    } catch (err) { toast(`The timer hit a problem: ${err && err.message ? err.message : err}`); }
     $('#dock').innerHTML = dockHtml(id);
   };
 }
@@ -431,7 +445,7 @@ function viewPrayerForm(v, id) {
 const typeLabel = (e) => (e.type === 'prayer' ? 'Prayer' : 'Journal');
 function viewJournal(v) {
   const groups = {};
-  for (const e of S.journal) (groups[fmtDate(e.date, { month: 'long', year: 'numeric' })] ||= []).push(e);
+  for (const e of S.journal) { const m = fmtDate(e.date, { month: 'long', year: 'numeric' }); (groups[m] = groups[m] || []).push(e); }
   v.innerHTML = pageTop('Journal', { right: '<a class="btn primary" href="#/journal/new" style="min-height:38px;padding:0 14px">New entry</a>' }) + `<div class="page">
     ${S.journal.length ? Object.entries(groups).map(([m, es]) => `<h2 class="section-h">${esc(m)}</h2><div class="list">${es.map((e) => {
       const snip = e.fields?.map((f) => f.text).join(' · ') || '';
@@ -526,6 +540,7 @@ function viewSettings(v) {
 
     <h2 class="section-h">Start again</h2>
     <div class="card"><button class="btn ember block" id="wipe">Remove everything from this phone</button></div>
+    <p class="tally">Family Altar version ${BUILD}</p>
   </div>`;
 
   $$('.seg button', v).forEach((b) => b.onclick = () => { S.who = b.dataset.n; save(); route(); toast(`This phone now greets ${S.who}`); });
