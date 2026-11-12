@@ -4,7 +4,7 @@
    Everything written here (journal, prayer history) stays on this phone, in localStorage. */
 
 const STORE = 'familyaltar.v1';
-const BUILD = 3; // shown in Settings, so we can tell which version a phone has
+const BUILD = 4; // shown in Settings, so we can tell which version a phone has
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -312,9 +312,11 @@ function viewToday(v) {
       ${updateBanner()}
       ${C.word ? `<section class="card word"><p class="eyebrow">Our prophetic word</p>
         <p class="word-text">“${esc(C.word.text)}”</p><p class="ref">${esc(C.word.ref)}</p></section>` : ''}
+      ${C.statement?.text ? `<section class="card word"><p class="eyebrow">Our declaration</p>
+        <p class="word-text">${esc(C.statement.text)}</p></section>` : ''}
       <section class="card next"><p class="eyebrow">Today · ${n} of ${all.length} prayed</p>
         <div class="dots" aria-hidden="true">${all.map((p) => `<i${done.has(p.id) ? ' class="on"' : ''}></i>`).join('')}</div>
-        ${next ? `<span class="pref">${esc(next.ref || 'My prayer')}</span><h2 class="h2">${esc(next.title)}</h2>
+        ${next ? `<span class="pref">${esc(next.tag || next.ref || 'My prayer')}</span><h2 class="h2">${esc(next.title)}</h2>
           <p class="snip">${esc(next.text)}</p>
           <a class="btn lamp block" href="#/pray/${encodeURIComponent(next.id)}">${active
             ? `${S.timer.end ? 'Continue praying' : 'Paused'} · <span class="t-left" data-id="${esc(next.id)}">${fmtLeft(leftOf(S.timer))}</span>`
@@ -344,7 +346,7 @@ function viewPrayers(v) {
         : last ? `<div class="meta">Last prayed ${fmtDate(last + 'T12:00')}</div>` : '';
       return `<a class="row-link" href="#/pray/${encodeURIComponent(p.id)}"><div class="card">
         <span class="pnum${done.has(p.id) ? ' on' : ''}">${done.has(p.id) ? ICON.tick : i + 1}</span>
-        <div class="grow"><span class="pref">${esc(p.ref || 'My prayer')}</span><h2 class="h3" style="margin:0 0 4px">${esc(p.title)}</h2>
+        <div class="grow"><span class="pref">${esc(p.tag || p.ref || 'My prayer')}</span><h2 class="h3" style="margin:0 0 4px">${esc(p.title)}</h2>
           <p class="snip">${esc(p.text)}</p>${status}</div>${ICON.chev}</div></a>`;
     }).join('')}</div>
     <a class="btn block" href="#/pray/new" style="margin-top:14px">Add a prayer</a>
@@ -382,6 +384,7 @@ function viewPrayer(v, id) {
     <div class="page">
       ${p.verses.map((x) => ovalHtml(x, p.nkjv)).join('')}
       <h1 class="pray-title">${esc(p.title)}</h1>
+      ${p.tag ? `<p class="pref">${esc(p.tag)}</p>` : ''}
       <p class="pray-text">${esc(p.text)}</p>
       <div class="pray-meta">${done ? `<span class="done-chip">${ICON.tick}Prayed today</span>` : '<span></span>'}
         <a class="link" href="#/pray/${encodeURIComponent(id)}/edit">Edit prayer</a></div>
