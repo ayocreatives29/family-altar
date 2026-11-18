@@ -4,7 +4,7 @@
    Everything written here (journal, prayer history) stays on this phone, in localStorage. */
 
 const STORE = 'familyaltar.v1';
-const BUILD = 4; // shown in Settings, so we can tell which version a phone has
+const BUILD = 5; // shown in Settings, so we can tell which version a phone has
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -383,6 +383,7 @@ function viewPrayer(v, id) {
   v.innerHTML = `<header class="top"><div class="top-row"><a class="back" href="#/pray">${ICON.back}Prayers</a><span class="count">${i + 1} of ${all.length}</span></div></header>
     <div class="page">
       ${p.verses.map((x) => ovalHtml(x, p.nkjv)).join('')}
+      ${p.readAll ? `<a class="link read-all" href="${bgUrl(p.readAll)}" target="_blank" rel="noopener">Read all of ${esc(p.readAll)} (NKJV)</a>` : ''}
       <h1 class="pray-title">${esc(p.title)}</h1>
       ${p.tag ? `<p class="pref">${esc(p.tag)}</p>` : ''}
       <p class="pray-text">${esc(p.text)}</p>
